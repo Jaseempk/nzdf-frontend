@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { ConnectKitButton } from "connectkit";
 import { IDKitWidget } from "@worldcoin/idkit";
 import { motion, AnimatePresence } from "framer-motion";
@@ -7,6 +7,7 @@ import { SwapInterface } from "./components/SwapInterface";
 import { PoolInterface } from "./components/PoolInterface";
 import { getAccount } from "@wagmi/core";
 import { config } from "./main";
+import { useAccount } from "wagmi";
 
 function App() {
   const [isVerified, setIsVerified] = useState(false);
@@ -16,12 +17,16 @@ function App() {
   const [selectedToken1] = useState("ETH");
   const [selectedToken2] = useState("USDC");
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
 
-  const account = getAccount(config);
+  const account = useAccount({ config });
+  console.log("account:", account);
+  const address = account.address;
 
   const handleVerification = async () => {
+    setIsVerifying(true);
     const response = await fetch(
-      `https://api.talentprotocol.com/api/v2/passports/${account?.address}`,
+      `https://api.talentprotocol.com/api/v2/passports/${address}`,
       {
         method: "GET",
         headers: {
@@ -30,16 +35,22 @@ function App() {
         },
       }
     );
+    await new Promise((resolve) => setTimeout(resolve, 5000));
     console.log("account:", account?.address);
     const data = await response?.json();
     console.log("daaata:", data);
-    const builderScore = data?.builder_score || 0;
-    setIsHuman(builderScore > 50);
+    console.log("iiidentity:", data.passport?.identity_score);
+    const identityScore = data?.passport?.identity_score || 0;
+    console.log("identityScore:", identityScore);
+
+    await new Promise((resolve) => setTimeout(resolve, 5000));
+    setIsHuman(identityScore > 9);
     setIsModalOpen(true);
+    setIsVerifying(false);
   };
 
   const calculateFee = () => {
-    return isVerified ? "0.3%" : "3%";
+    return isHuman ? "0.3%" : "3%";
   };
 
   const CustomModal = () => (
@@ -158,15 +169,36 @@ function App() {
         </AnimatePresence>
 
         <div className="mt-6 space-y-4">
-          {!isVerified && (
+          {!isVerified && account?.isConnected && (
             <>
               <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={handleVerification}
-                className="w-full bg-blue-500 text-white py-3 rounded-xl font-medium"
+                whileHover={isHuman || isVerifying ? {} : { scale: 1.02 }}
+                whileTap={isHuman || isVerifying ? {} : { scale: 0.98 }}
+                onClick={
+                  isHuman || isVerifying ? undefined : handleVerification
+                }
+                className={`w-full ${
+                  isHuman
+                    ? "bg-green-500 cursor-default"
+                    : isVerifying
+                    ? "bg-blue-500 cursor-wait"
+                    : "bg-blue-500 cursor-pointer"
+                } text-white py-3 rounded-xl font-medium relative overflow-hidden`}
+                disabled={isHuman === true || isVerifying}
               >
-                Verify Personhood
+                {isHuman
+                  ? "Personhood Verified"
+                  : isVerifying
+                  ? "Verifying..."
+                  : "Verify Personhood"}
+                {isVerifying && (
+                  <motion.div
+                    className="absolute bottom-0 left-0 h-1 bg-white"
+                    initial={{ width: 0 }}
+                    animate={{ width: "100%" }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                )}
               </motion.button>
               <IDKitWidget
                 app_id="app_staging_0de98768469caa15048d3f7dd4c2c162"

@@ -21,6 +21,7 @@ function App() {
   const [isSwapping, setIsSwapping] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastTxHash, setLastTxHash] = useState<string>();
+  const [zeroForOne, setZeroForOne] = useState(true);
 
   const account = useAccount({ config });
   const address = account.address;
@@ -157,9 +158,11 @@ function App() {
             {activeTab === "swap" ? (
               <SwapInterface
                 amount={amount}
+                zeroForOne={zeroForOne}
                 setAmount={setAmount}
                 selectedToken1={selectedToken1}
                 selectedToken2={selectedToken2}
+                setZeroForOne={setZeroForOne}
               />
             ) : (
               <PoolInterface />

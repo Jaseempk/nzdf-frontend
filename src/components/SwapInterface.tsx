@@ -5,25 +5,26 @@ import { TokenInput } from "./TokenInput";
 
 interface SwapInterfaceProps {
   amount: string;
-  zeroForOne: boolean;
+  isExactInput: boolean;
   setAmount: (value: string) => void;
   selectedToken1: string;
   selectedToken2: string;
   setZeroForOne: (value: boolean) => void;
+  setIsExactInput: (value: boolean) => void;
 }
 
 export function SwapInterface({
   amount,
-  zeroForOne,
+  isExactInput,
   setAmount,
   selectedToken1,
   selectedToken2,
   setZeroForOne,
+  setIsExactInput,
 }: SwapInterfaceProps) {
   const [isTopToken1, setIsTopToken1] = useState(true);
   const [topAmount, setTopAmount] = useState("");
   const [bottomAmount, setBottomAmount] = useState("");
-  const [isExactInput, setIsExactInput] = useState(true);
 
   // Simulated price ratio (1 ETH = 2000 USDC)
   const ETH_TO_USDC_RATIO = 2000;

@@ -6,9 +6,11 @@ import { SwapInterface } from "./components/SwapInterface";
 import { PoolInterface } from "./components/PoolInterface";
 import { config } from "./main";
 import { useAccount } from "wagmi";
+import { writeContract, simulateContract, readContract } from "@wagmi/core";
+import { parseEther } from "viem";
 import { SwapButton } from "./components/SwapButton";
 import { SuccessModal } from "./components/SuccessModal";
-
+import { abi, routerAddress } from "../abis/routerAbi";
 function App() {
   const [isVerified, setIsVerified] = useState(false);
   const [isHuman, setIsHuman] = useState<boolean | null>(null);
@@ -25,6 +27,8 @@ function App() {
 
   const account = useAccount({ config });
   const address = account.address;
+
+  const swapRouter = "0x96E3495b712c6589f1D2c50635FDE68CF17AC83c";
 
   const handleVerification = async () => {
     setIsVerifying(true);
@@ -53,9 +57,19 @@ function App() {
 
     setIsSwapping(true);
     try {
+      const { request } = await simulateContract(config, {
+        abi,
+        address: routerAddress,
+        functionName: "swap",
+        args: [],
+        value: parseEther(amount.toString()),
+      });
+
+      // Write to contract and wait for transaction
+      const hash = await writeContract(config, request);
       // Here you would call your contract's swap function
       await new Promise((resolve) => setTimeout(resolve, 2000)); // Simulating transaction
-      setLastTxHash("0x123..."); // Replace with actual tx hash
+      setLastTxHash(hash); // Replace with actual tx hash
       setShowSuccessModal(true);
     } catch (error) {
       console.error("Swap failed:", error);

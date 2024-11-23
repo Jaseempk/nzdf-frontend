@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { ArrowLeftRight } from "lucide-react";
 import { TokenInput } from "./TokenInput";
@@ -21,24 +21,85 @@ export function SwapInterface({
   setZeroForOne,
 }: SwapInterfaceProps) {
   const [isTopToken1, setIsTopToken1] = useState(true);
+  const [topAmount, setTopAmount] = useState("");
+  const [bottomAmount, setBottomAmount] = useState("");
+  const [isExactInput, setIsExactInput] = useState(true);
+
+  // Simulated price ratio (1 ETH = 2000 USDC)
+  const ETH_TO_USDC_RATIO = 2000;
 
   const handleSwapToggle = () => {
     setIsTopToken1(!isTopToken1);
     setZeroForOne(!isTopToken1);
+    // Swap the amounts when toggling
+    setTopAmount(bottomAmount);
+    setBottomAmount(topAmount);
   };
+
+  const handleTopAmountChange = (value: string) => {
+    setIsExactInput(true);
+    setTopAmount(value);
+    setAmount(value);
+
+    if (value === "") {
+      setBottomAmount("");
+      return;
+    }
+
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) return;
+
+    const convertedAmount = isTopToken1
+      ? (numValue * ETH_TO_USDC_RATIO).toFixed(2)
+      : (numValue / ETH_TO_USDC_RATIO).toFixed(6);
+
+    setBottomAmount(convertedAmount);
+  };
+
+  const handleBottomAmountChange = (value: string) => {
+    setIsExactInput(false);
+    setBottomAmount(value);
+    setAmount(value);
+
+    if (value === "") {
+      setTopAmount("");
+      return;
+    }
+
+    const numValue = parseFloat(value);
+    if (isNaN(numValue)) return;
+
+    const convertedAmount = isTopToken1
+      ? (numValue / ETH_TO_USDC_RATIO).toFixed(6)
+      : (numValue * ETH_TO_USDC_RATIO).toFixed(2);
+
+    setTopAmount(convertedAmount);
+  };
+
+  // Update amounts when external amount prop changes
+  useEffect(() => {
+    if (amount !== topAmount && amount !== bottomAmount) {
+      setTopAmount(amount);
+      if (amount) {
+        const numValue = parseFloat(amount);
+        const convertedAmount = isTopToken1
+          ? (numValue * ETH_TO_USDC_RATIO).toFixed(2)
+          : (numValue / ETH_TO_USDC_RATIO).toFixed(6);
+        setBottomAmount(convertedAmount);
+      } else {
+        setBottomAmount("");
+      }
+    }
+  }, [amount, isTopToken1]);
 
   return (
     <>
       <TokenInput
-        value={isTopToken1 ? amount : ""}
-        onChange={isTopToken1 ? setAmount : undefined}
+        value={topAmount}
+        onChange={handleTopAmountChange}
         token={isTopToken1 ? selectedToken1 : selectedToken2}
-        tokenLogo={
-          isTopToken1
-            ? "https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
-            : "https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png"
-        }
-        readOnly={!isTopToken1}
+        tokenLogo={isTopToken1 ? "/images/ETH.png" : "images/USDC.png"}
+        isError={!isExactInput && topAmount !== ""}
       />
 
       <div className="flex justify-center -my-2 z-10">
@@ -53,16 +114,28 @@ export function SwapInterface({
       </div>
 
       <TokenInput
-        value={!isTopToken1 ? amount : ""}
-        onChange={!isTopToken1 ? setAmount : undefined}
+        value={bottomAmount}
+        onChange={handleBottomAmountChange}
         token={!isTopToken1 ? selectedToken1 : selectedToken2}
-        tokenLogo={
-          !isTopToken1
-            ? "https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/ethereum/assets/0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2/logo.png"
-            : "https://raw.githubusercontent.com/Uniswap/assets/master/blockchains/ethereum/assets/0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48/logo.png"
-        }
-        readOnly={isTopToken1}
+        tokenLogo={!isTopToken1 ? "/images/ETH.png" : "/images/USDC.png"}
       />
+
+      {(topAmount || bottomAmount) && (
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-2 px-2 py-1 bg-white/5 rounded-lg"
+        >
+          <div className="text-sm text-gray-400 flex justify-between items-center">
+            <span>Rate</span>
+            <span>
+              1 {isTopToken1 ? selectedToken1 : selectedToken2} ={" "}
+              {ETH_TO_USDC_RATIO}{" "}
+              {!isTopToken1 ? selectedToken1 : selectedToken2}
+            </span>
+          </div>
+        </motion.div>
+      )}
     </>
   );
 }

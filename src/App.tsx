@@ -21,7 +21,6 @@ function App() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [zeroForOne, setZeroForOne] = useState(true);
-  const [isExactInput, setIsExactInput] = useState(true);
 
   const account = useAccount({ config });
   const { swap, isSwapping, lastTxHash } = useSwap(config);
@@ -36,7 +35,7 @@ function App() {
   const handleSwap = async () => {
     if (!amount || !isHuman) return;
     try {
-      await swap(amount, zeroForOne, isExactInput);
+      await swap(amount, zeroForOne);
       setShowSuccessModal(true);
     } catch (error) {
       console.error("Swap failed:", error);
@@ -103,12 +102,10 @@ function App() {
             {activeTab === "swap" ? (
               <SwapInterface
                 amount={amount}
-                isExactInput={isExactInput}
                 setAmount={setAmount}
                 selectedToken1={selectedToken1}
                 selectedToken2={selectedToken2}
                 setZeroForOne={setZeroForOne}
-                setIsExactInput={setIsExactInput}
               />
             ) : (
               <PoolInterface />

@@ -5,36 +5,52 @@ import { TokenInput } from "./TokenInput";
 
 interface SwapInterfaceProps {
   amount: string;
-  isExactInput: boolean;
   setAmount: (value: string) => void;
   selectedToken1: string;
   selectedToken2: string;
   setZeroForOne: (value: boolean) => void;
-  setIsExactInput: (value: boolean) => void;
 }
 
 export function SwapInterface({
   amount,
-  isExactInput,
   setAmount,
   selectedToken1,
   selectedToken2,
   setZeroForOne,
-  setIsExactInput,
 }: SwapInterfaceProps) {
   const [isTopToken1, setIsTopToken1] = useState(true);
   const [topAmount, setTopAmount] = useState("");
   const [bottomAmount, setBottomAmount] = useState("");
+  const [isExactInput, setIsExactInput] = useState(true);
+  const [ethPrice, setEthPrice] = useState<number | null>(null);
 
-  // Simulated price ratio (1 ETH = 2000 USDC)
-  const ETH_TO_USDC_RATIO = 2000;
+  useEffect(() => {
+    const fetchEthPrice = async () => {
+      try {
+        const response = await fetch(
+          "https://api.coingecko.com/api/v3/simple/price?ids=ethereum&vs_currencies=usd"
+        );
+        const data = await response.json();
+        setEthPrice(data.ethereum.usd);
+      } catch (error) {
+        console.error("Failed to fetch ETH price:", error);
+        setEthPrice(2000); // Fallback price if API fails
+      }
+    };
+
+    fetchEthPrice();
+    const interval = setInterval(fetchEthPrice, 60000); // Update price every minute
+
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSwapToggle = () => {
     setIsTopToken1(!isTopToken1);
     setZeroForOne(!isTopToken1);
-    // Swap the amounts when toggling
-    setTopAmount(bottomAmount);
-    setBottomAmount(topAmount);
+    // Reset both input fields
+    setTopAmount("");
+    setBottomAmount("");
+    setAmount("");
   };
 
   const handleTopAmountChange = (value: string) => {
@@ -48,11 +64,11 @@ export function SwapInterface({
     }
 
     const numValue = parseFloat(value);
-    if (isNaN(numValue)) return;
+    if (isNaN(numValue) || !ethPrice) return;
 
     const convertedAmount = isTopToken1
-      ? (numValue * ETH_TO_USDC_RATIO).toFixed(2)
-      : (numValue / ETH_TO_USDC_RATIO).toFixed(6);
+      ? (numValue * ethPrice).toFixed(2)
+      : (numValue / ethPrice).toFixed(6);
 
     setBottomAmount(convertedAmount);
   };
@@ -68,11 +84,11 @@ export function SwapInterface({
     }
 
     const numValue = parseFloat(value);
-    if (isNaN(numValue)) return;
+    if (isNaN(numValue) || !ethPrice) return;
 
     const convertedAmount = isTopToken1
-      ? (numValue / ETH_TO_USDC_RATIO).toFixed(6)
-      : (numValue * ETH_TO_USDC_RATIO).toFixed(2);
+      ? (numValue / ethPrice).toFixed(6)
+      : (numValue * ethPrice).toFixed(2);
 
     setTopAmount(convertedAmount);
   };
@@ -81,17 +97,17 @@ export function SwapInterface({
   useEffect(() => {
     if (amount !== topAmount && amount !== bottomAmount) {
       setTopAmount(amount);
-      if (amount) {
+      if (amount && ethPrice) {
         const numValue = parseFloat(amount);
         const convertedAmount = isTopToken1
-          ? (numValue * ETH_TO_USDC_RATIO).toFixed(2)
-          : (numValue / ETH_TO_USDC_RATIO).toFixed(6);
+          ? (numValue * ethPrice).toFixed(2)
+          : (numValue / ethPrice).toFixed(6);
         setBottomAmount(convertedAmount);
       } else {
         setBottomAmount("");
       }
     }
-  }, [amount, isTopToken1]);
+  }, [amount, isTopToken1, ethPrice]);
 
   return (
     <>
@@ -99,7 +115,7 @@ export function SwapInterface({
         value={topAmount}
         onChange={handleTopAmountChange}
         token={isTopToken1 ? selectedToken1 : selectedToken2}
-        tokenLogo={isTopToken1 ? "/images/ETH.png" : "images/USDC.png"}
+        tokenLogo={isTopToken1 ? "/images/ETH.png" : "/images/USDC.png"}
         isError={!isExactInput && topAmount !== ""}
       />
 
@@ -121,7 +137,7 @@ export function SwapInterface({
         tokenLogo={!isTopToken1 ? "/images/ETH.png" : "/images/USDC.png"}
       />
 
-      {(topAmount || bottomAmount) && (
+      {(topAmount || bottomAmount) && ethPrice && (
         <motion.div
           initial={{ opacity: 0, y: 5 }}
           animate={{ opacity: 1, y: 0 }}
@@ -131,7 +147,7 @@ export function SwapInterface({
             <span>Rate</span>
             <span>
               1 {isTopToken1 ? selectedToken1 : selectedToken2} ={" "}
-              {ETH_TO_USDC_RATIO}{" "}
+              {ethPrice.toFixed(2)}{" "}
               {!isTopToken1 ? selectedToken1 : selectedToken2}
             </span>
           </div>

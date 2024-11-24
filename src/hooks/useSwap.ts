@@ -12,21 +12,17 @@ export function useSwap(config: Config) {
   const HOOK_ADDRESS = "0x9D8fEaDBdA9A0a87378C87eAB794151f3e7774c0";
   const TOKEN0_ADDRESS = "0x0000000000000000000000000000000000000000";
   const TOKEN1_ADDRESS = "0x036CbD53842c5426634e7929541eC2318f3dCF7e";
-  const MIN_PRICE_LIMIT = BigInt("79228162514264337593543950337");
+  const MIN_PRICE_LIMIT = BigInt("79228162514264337593543950336");
 
-  const swap = async (
-    amount: string,
-    zeroForOne: boolean,
-    isExactInput: boolean
-  ) => {
+  const swap = async (amount: string, zeroForOne: boolean) => {
     if (!amount) return;
 
     // Prepare swap parameters
     const poolKey = {
       currency0: TOKEN0_ADDRESS,
       currency1: TOKEN1_ADDRESS,
-      fee: 0,
-      tickSpacing: -120,
+      fee: 0x800000,
+      tickSpacing: 120,
       hooks: HOOK_ADDRESS,
     };
 

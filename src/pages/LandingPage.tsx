@@ -162,7 +162,7 @@ export function Landing() {
           animate={{ opacity: 1 }}
           className="text-3xl font-bold mb-6 text-white"
         >
-          Experience defi built for Humans, not for Bots!
+          Experience dex built for Humans, not for Bots!
         </motion.h2>
         <motion.div
           initial={{ opacity: 0 }}
